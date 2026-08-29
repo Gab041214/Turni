@@ -586,9 +586,9 @@ function Index() {
       </div>
 
       <Dialog open={!!dayPopup} onOpenChange={(o) => !o && setDayPopup(null)}>
-        <DialogContent className="rounded-2xl sm:max-w-md">
+        <DialogContent className="w-fit rounded-2xl">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="whitespace-nowrap text-sm font-normal">
               {dayPopup
                 ? format(dayPopup.date, "EEEE d MMMM", { locale: it }).replace(/^./, (c) => c.toUpperCase())
                 : ""}
@@ -596,7 +596,7 @@ function Index() {
           </DialogHeader>
 
           <div>
-            <h3 className="mb-1.5 text-sm font-semibold text-foreground">Chi apre</h3>
+            <h3 className="mb-1.5 text-lg font-semibold text-foreground">Chi apre</h3>
             {dayPopup && dayPopup.apre.length > 0 ? (
               <ul className="mb-4 space-y-1">
                 {dayPopup.apre.map((n) => (
@@ -609,7 +609,7 @@ function Index() {
               <p className="mb-4 text-sm text-muted-foreground">Nessuno.</p>
             )}
 
-            <h3 className="mb-1.5 text-sm font-semibold text-foreground">Chi chiude</h3>
+            <h3 className="mb-1.5 text-lg font-semibold text-foreground">Chi chiude</h3>
             {dayPopup && dayPopup.chiude.length > 0 ? (
               <ul className="space-y-1">
                 {dayPopup.chiude.map((n) => (
