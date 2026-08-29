@@ -481,7 +481,7 @@ function Index() {
                     <div key={`${weekIdx}-${label}`} className="relative h-24 sm:h-[148px]">
                       {/* Data: posizione fissa, indipendente dall'altezza della tessera */}
                       <div className="absolute inset-x-0 top-2 z-10 pb-1 text-center">
-                        <div className="truncate text-[14px] text-foreground sm:text-[18px]">
+                        <div className="truncate text-[12px] sm:text-[16px]" style={{ color: "#5c5c5c" }}>
                           {date ? format(date, "d", { locale: it }) : "—"}
                         </div>
                       </div>
@@ -507,7 +507,7 @@ function Index() {
                             )}
                           </article>
                           {/* Orari: posizione fissa, poco sotto al bordo superiore della tessera bassa */}
-                          <div className="absolute inset-x-0 top-[31px] z-10 flex flex-col items-center gap-0.5 px-1 text-center sm:top-[50px] sm:gap-1 sm:px-2">
+                          <div className="absolute inset-x-0 top-[36px] z-10 flex flex-col items-center gap-0.5 px-1 text-center sm:top-[55px] sm:gap-1 sm:px-2">
                             <span className="text-[12px] font-bold leading-tight text-foreground sm:text-base">
                               {data.start}
                             </span>
