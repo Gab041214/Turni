@@ -481,7 +481,7 @@ function Index() {
                     <div key={`${weekIdx}-${label}`} className="relative h-24 sm:h-[148px]">
                       {/* Data: posizione fissa, indipendente dall'altezza della tessera */}
                       <div className="absolute inset-x-0 top-2 z-10 pb-1 text-center">
-                        <div className="truncate text-[14px] font-bold text-foreground sm:text-[18px]">
+                        <div className="truncate text-[14px] text-foreground sm:text-[18px]">
                           {date ? format(date, "d", { locale: it }) : "—"}
                         </div>
                       </div>
@@ -497,7 +497,7 @@ function Index() {
                             {data.total && (
                               <span
                                 className={cn(
-                                  "w-full rounded-md px-1 py-0.5 text-center text-[10px] font-medium text-foreground sm:rounded-xl sm:px-2 sm:py-1 sm:text-xs",
+                                  "w-full rounded-md px-1 py-[2px] text-center text-[10px] font-medium leading-none text-foreground sm:rounded-xl sm:px-2 sm:py-[3px] sm:text-xs",
                                   !data.late && "bg-secondary",
                                 )}
                                 style={data.late ? { backgroundColor: accent } : undefined}
@@ -507,7 +507,7 @@ function Index() {
                             )}
                           </article>
                           {/* Orari: posizione fissa, poco sotto al bordo superiore della tessera bassa */}
-                          <div className="absolute inset-x-0 top-[41px] z-10 flex flex-col items-center gap-0.5 px-1 text-center sm:top-[60px] sm:gap-1 sm:px-2">
+                          <div className="absolute inset-x-0 top-[31px] z-10 flex flex-col items-center gap-0.5 px-1 text-center sm:top-[50px] sm:gap-1 sm:px-2">
                             <span className="text-[12px] font-bold leading-tight text-foreground sm:text-base">
                               {data.start}
                             </span>
