@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Upload, Trash2, Users, X } from "lucide-react";
-import { format, addDays, isToday, startOfMonth, endOfMonth, startOfWeek, differenceInCalendarWeeks } from "date-fns";
+import { format, addDays, isToday, startOfMonth, endOfMonth, startOfWeek, differenceInCalendarWeeks, differenceInCalendarDays } from "date-fns";
 import { it } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
@@ -206,6 +206,20 @@ type DayData = {
 } | null;
 type WeekData = { monday: Date | undefined; days: DayData[] };
 
+/** Ricostruisce la mappa offset -> turno (Sunday=0, Mon..Sat=1..6, poi +7 per ogni riga) per un nominativo. */
+function offsetMapForName(rows: string[][], name: string): Map<number, DayData> {
+  const matching = rows.filter((r) => (r[1] ?? "").trim() === name);
+  const byOffset = new Map<number, DayData>();
+  matching.forEach((row, i) => {
+    const base = i * 7;
+    byOffset.set(base, blockData(row, DAY_BLOCKS[6]!));
+    for (let d = 0; d < 6; d++) {
+      byOffset.set(base + 1 + d, blockData(row, DAY_BLOCKS[d]!));
+    }
+  });
+  return byOffset;
+}
+
 function blockData(row: string[], cols: number[]): DayData {
   const values: string[] = [];
   for (const c of cols) {
@@ -241,6 +255,7 @@ function Index() {
   const [options, setOptions] = useState<string[]>([]);
   const [manageOpen, setManageOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const [dayPopup, setDayPopup] = useState<{ date: Date; apre: string[]; chiude: string[] } | null>(null);
   const [newOption, setNewOption] = useState("");
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
   const setAccentColor = (c: string) => {
@@ -350,6 +365,40 @@ function Index() {
       return { monday, days };
     });
   }, [rows, selected, month]);
+
+  // Domenica di riferimento: stesso ancoraggio usato per "weeks" (offset 0 = ultimo
+  // giorno della prima settimana visualizzata), ma calcolato una volta sola e riusabile
+  // per QUALSIASI nominativo, non solo quello selezionato nel menu.
+  const referenceSunday = useMemo(() => {
+    if (!month) return undefined;
+    const gridStart = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
+    return addDays(gridStart, 6);
+  }, [month]);
+
+  // Mappa offset -> turno per ogni nominativo presente nell'elenco voci (non solo il selezionato).
+  const peopleByOffset = useMemo(() => {
+    const map = new Map<string, Map<number, DayData>>();
+    for (const name of options) {
+      map.set(name, offsetMapForName(rows, name));
+    }
+    return map;
+  }, [rows, options]);
+
+  const openDayPopup = (date: Date | undefined) => {
+    if (!date || !referenceSunday || rows.length === 0) return;
+    const offset = differenceInCalendarDays(date, referenceSunday);
+    const apre: string[] = [];
+    const chiude: string[] = [];
+    for (const name of options) {
+      const data = peopleByOffset.get(name)?.get(offset);
+      if (!data) continue;
+      const s = toMinutes(data.start);
+      const e = toMinutes(data.end);
+      if (s !== null && s <= 10 * 60) apre.push(name);
+      if (e !== null && e >= 20 * 60) chiude.push(name);
+    }
+    setDayPopup({ date, apre, chiude });
+  };
 
 
 
@@ -478,7 +527,11 @@ function Index() {
                   const data = week.days[i];
                   const today = date ? isToday(date) : false;
                   return (
-                    <div key={`${weekIdx}-${label}`} className="relative h-24 sm:h-[148px]">
+                    <div
+                      key={`${weekIdx}-${label}`}
+                      className="relative h-24 cursor-pointer sm:h-[148px]"
+                      onClick={() => openDayPopup(date)}
+                    >
                       {/* Data: posizione fissa, indipendente dall'altezza della tessera */}
                       <div className="absolute inset-x-0 top-2 z-10 pb-1 text-center">
                         <div className="truncate text-[12px] sm:text-[16px]" style={{ color: "#5c5c5c" }}>
@@ -531,6 +584,51 @@ function Index() {
           </p>
         )}
       </div>
+
+      <Dialog open={!!dayPopup} onOpenChange={(o) => !o && setDayPopup(null)}>
+        <DialogContent className="rounded-2xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {dayPopup
+                ? format(dayPopup.date, "EEEE d MMMM", { locale: it }).replace(/^./, (c) => c.toUpperCase())
+                : ""}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div>
+            <h3 className="mb-1.5 text-sm font-semibold text-foreground">Chi apre</h3>
+            {dayPopup && dayPopup.apre.length > 0 ? (
+              <ul className="mb-4 space-y-1">
+                {dayPopup.apre.map((n) => (
+                  <li key={n} className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">
+                    {n}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mb-4 text-sm text-muted-foreground">Nessuno.</p>
+            )}
+
+            <h3 className="mb-1.5 text-sm font-semibold text-foreground">Chi chiude</h3>
+            {dayPopup && dayPopup.chiude.length > 0 ? (
+              <ul className="space-y-1">
+                {dayPopup.chiude.map((n) => (
+                  <li key={n} className="rounded-xl bg-secondary px-3 py-2 text-sm text-foreground">
+                    {n}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nessuno.</p>
+            )}
+          </div>
+
+          <Button variant="outline" className="rounded-xl" onClick={() => setDayPopup(null)}>
+            <X className="mr-1 size-4" />
+            Chiudi
+          </Button>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={manageOpen} onOpenChange={setManageOpen}>
         <DialogContent className="rounded-2xl sm:max-w-md">
