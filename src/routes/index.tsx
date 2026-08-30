@@ -409,7 +409,7 @@ function Index() {
 
 
   return (
-    <main className="min-h-screen bg-secondary pb-16">
+    <main className="min-h-screen pb-16" style={{ backgroundColor: "#D8D8DE" }}>
       <div className="mx-auto max-w-6xl px-4 pt-6">
         <header className="mb-4">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
