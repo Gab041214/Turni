@@ -348,7 +348,9 @@ function Index() {
     });
 
     // Displayed weeks run Monday -> Sunday and cover the selected month.
-    // The reference Sunday is the last day of the first displayed week.
+    // The reference Sunday is the day BEFORE the first displayed Monday (gridStart):
+    // each Excel row covers a Sunday->Saturday week, where that row's Sunday precedes
+    // its own Monday-Saturday block (offset 0 = Sunday, 1..6 = Mon..Sat of the SAME row).
     const gridStart = month ? startOfWeek(startOfMonth(month), { weekStartsOn: 1 }) : undefined;
     const weekCount =
       gridStart && month
@@ -356,7 +358,7 @@ function Index() {
         : matching.length + 1;
 
     return Array.from({ length: weekCount }, (_, w) => {
-      const mondayOffset = w * 7 - 6;
+      const mondayOffset = w * 7 + 1;
       const monday = gridStart ? addDays(gridStart, w * 7) : undefined;
       const days = Array.from(
         { length: 7 },
@@ -366,13 +368,13 @@ function Index() {
     });
   }, [rows, selected, month]);
 
-  // Domenica di riferimento: stesso ancoraggio usato per "weeks" (offset 0 = ultimo
-  // giorno della prima settimana visualizzata), ma calcolato una volta sola e riusabile
+  // Domenica di riferimento: stesso ancoraggio usato per "weeks" (offset 0 = domenica
+  // che precede il primo lunedì visualizzato), ma calcolato una volta sola e riusabile
   // per QUALSIASI nominativo, non solo quello selezionato nel menu.
   const referenceSunday = useMemo(() => {
     if (!month) return undefined;
     const gridStart = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-    return addDays(gridStart, 6);
+    return addDays(gridStart, -1);
   }, [month]);
 
   // Mappa offset -> turno per ogni nominativo presente nell'elenco voci (non solo il selezionato).
