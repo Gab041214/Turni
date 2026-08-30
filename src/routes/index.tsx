@@ -526,7 +526,11 @@ function Index() {
         {/* Month: one week per row, ciascuna settimana inscritta in una cornice */}
         <section className="mt-3 space-y-2">
           {weeks.map((week, weekIdx) => (
-            <div key={weekIdx} className="rounded-2xl border border-border/60 p-1.5 sm:rounded-3xl sm:p-2">
+            <div
+              key={weekIdx}
+              className="rounded-2xl border border-border/60 p-1.5 sm:rounded-3xl sm:p-2"
+              style={{ backgroundColor: "#ECECF0" }}
+            >
               <div className="grid grid-cols-7 gap-1 sm:gap-2">
                 {DAY_LABELS.map((label, i) => {
                   const date = week.monday ? addDays(week.monday, i) : undefined;
