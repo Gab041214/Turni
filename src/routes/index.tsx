@@ -586,7 +586,7 @@ function Index() {
       </div>
 
       <Dialog open={!!dayPopup} onOpenChange={(o) => !o && setDayPopup(null)}>
-        <DialogContent className="w-fit rounded-2xl">
+        <DialogContent className="w-fit rounded-2xl" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="whitespace-nowrap text-sm font-normal">
               {dayPopup
@@ -622,11 +622,6 @@ function Index() {
               <p className="text-sm text-muted-foreground">Nessuno.</p>
             )}
           </div>
-
-          <Button variant="outline" className="rounded-xl" onClick={() => setDayPopup(null)}>
-            <X className="mr-1 size-4" />
-            Chiudi
-          </Button>
         </DialogContent>
       </Dialog>
 
