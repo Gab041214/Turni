@@ -253,6 +253,10 @@ function Index() {
   const [month, setMonth] = useState<Date | undefined>(undefined);
   const [selected, setSelected] = useState("");
   const [options, setOptions] = useState<string[]>([]);
+  const sortedOptions = useMemo(
+    () => [...options].sort((a, b) => a.localeCompare(b, "it", { sensitivity: "base" })),
+    [options],
+  );
   const [manageOpen, setManageOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
   const [dayPopup, setDayPopup] = useState<{ date: Date; apre: string[]; chiude: string[] } | null>(null);
@@ -458,7 +462,7 @@ function Index() {
                     <SelectValue placeholder="Nome" />
                   </SelectTrigger>
                   <SelectContent>
-                    {options.map((o) => (
+                    {sortedOptions.map((o) => (
                       <SelectItem key={o} value={o}>
                         {o}
                       </SelectItem>
@@ -659,10 +663,10 @@ function Index() {
             </Button>
           </form>
           <ul className="max-h-64 space-y-1 overflow-y-auto">
-            {options.length === 0 && (
+            {sortedOptions.length === 0 && (
               <li className="py-4 text-center text-sm text-muted-foreground">Nessuna voce.</li>
             )}
-            {options.map((o) => (
+            {sortedOptions.map((o) => (
               <li
                 key={o}
                 className="flex items-center justify-between rounded-xl bg-secondary px-3 py-2"
