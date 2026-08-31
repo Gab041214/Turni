@@ -432,16 +432,16 @@ function Index() {
   return (
     <main className="min-h-screen pb-16" style={{ backgroundColor: "#D8D8DE" }}>
       <div className="mx-auto max-w-6xl px-4 pt-6">
-        <header className="mb-4">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {month
-              ? format(month, "MMMM yyyy", { locale: it }).replace(/^./, (c) => c.toUpperCase())
-              : "Calendario Turni"}
-          </h1>
-        </header>
+        {/* Titolo + toolbar + giorno in testata (sticky, tutto opaco) */}
+        <section className="sticky top-0 z-20" style={{ backgroundColor: "#D8D8DE" }}>
+          <header className="mb-4">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              {month
+                ? format(month, "MMMM yyyy", { locale: it }).replace(/^./, (c) => c.toUpperCase())
+                : "Calendario Turni"}
+            </h1>
+          </header>
 
-        {/* Toolbar + giorno in testata (sticky) */}
-        <section className="sticky top-2 z-20">
           <div className="rounded-2xl border border-border/60 bg-card p-3 shadow-sm">
             <div className="grid grid-cols-[auto_1fr] gap-2">
               <input
