@@ -386,7 +386,11 @@ function Index() {
         ? differenceInCalendarWeeks(endOfMonth(month), gridStart, { weekStartsOn: 1 }) + 1
         : matching.length + 1;
 
-    return Array.from({ length: weekCount }, (_, w) => {
+    // +1 settimana di testa (w=-1): mostra la Domenica di riferimento (offset0, letta da
+    // SETUP!E7), che cade il giorno prima del primo lunedì visualizzato e altrimenti non
+    // rientrerebbe in nessuna settimana della griglia.
+    return Array.from({ length: weekCount + 1 }, (_, j) => {
+      const w = j - 1;
       const mondayOffset = w * 7 + 1;
       const monday = gridStart ? addDays(gridStart, w * 7) : undefined;
       const days = Array.from(
