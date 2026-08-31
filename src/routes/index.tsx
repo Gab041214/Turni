@@ -625,7 +625,7 @@ function Index() {
 
         {rows.length === 0 && (
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Carica il file Excel degli orari e seleziona una voce per iniziare.
+            Carica il file Excel degli orari e seleziona un nome per iniziare.
           </p>
         )}
       </div>
