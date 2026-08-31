@@ -55,6 +55,7 @@ const ROWS_KEY = "turni.file.rows";
 const FILENAME_KEY = "turni.file.name";
 const SELECTED_KEY = "turni.selected";
 const MONTH_KEY = "turni.month";
+const FILE_SUNDAY_KEY = "turni.fileSunday";
 const ACCENT_KEY = "turni.accent";
 
 const DEFAULT_ACCENT = "#00B5CE";
@@ -127,33 +128,37 @@ function norm(v: string): string {
   return v.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-/** Estrae la data di riferimento dalla cella E7 del foglio "SETUP". */
-function setupMonth(XLSX: typeof import("xlsx"), wb: import("xlsx").WorkBook): Date | undefined {
+/** Estrae la data esatta dalla cella E7 del foglio "SETUP": è la domenica della prima settimana. */
+function setupSunday(XLSX: typeof import("xlsx"), wb: import("xlsx").WorkBook): Date | undefined {
   const name = wb.SheetNames.find((n) => norm(n) === "setup");
   if (!name) return undefined;
   const cell = wb.Sheets[name]?.["E7"];
   if (!cell) return undefined;
-  if (cell.v instanceof Date) return startOfMonth(cell.v);
+  if (cell.v instanceof Date) return cell.v;
   if (typeof cell.v === "number") {
     const p = XLSX.SSF.parse_date_code(cell.v);
-    if (p) return new Date(p.y, p.m - 1, 1);
+    if (p) return new Date(p.y, p.m - 1, p.d);
   }
   const s = String(cell.w ?? cell.v ?? "").trim();
   const m = s.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
   if (m) {
     const year = Number(m[3]!.length === 2 ? `20${m[3]}` : m[3]);
-    return new Date(year, Number(m[2]) - 1, 1);
+    return new Date(year, Number(m[2]) - 1, Number(m[1]));
   }
   const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? undefined : startOfMonth(d);
+  return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
 /** Legge la sola tabella "Inserimento Orari" dal file Excel. */
-async function parseExcel(file: File): Promise<{ rows: string[][]; month: Date | undefined }> {
+async function parseExcel(
+  file: File,
+): Promise<{ rows: string[][]; month: Date | undefined; fileSunday: Date | undefined }> {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
-  // Priorità al mese/anno nel nome del file; fallback sulla cella SETUP!E7 se il nome non è riconoscibile.
-  const month = monthYearFromFileName(file.name) ?? setupMonth(XLSX, wb);
+  // Domenica esatta della prima settimana, letta da SETUP!E7 (es. 30/08 per un file di settembre).
+  const fileSunday = setupSunday(XLSX, wb);
+  // Priorità al mese/anno nel nome del file; fallback sul lunedì successivo a fileSunday.
+  const month = monthYearFromFileName(file.name) ?? (fileSunday ? startOfMonth(addDays(fileSunday, 1)) : undefined);
 
   const toRows = (name: string): string[][] =>
     (
@@ -167,18 +172,18 @@ async function parseExcel(file: File): Promise<{ rows: string[][]; month: Date |
 
   // 1) foglio chiamato "Inserimento Orari"
   const sheetName = wb.SheetNames.find((n) => norm(n) === TARGET_TABLE);
-  if (sheetName) return { rows: toRows(sheetName).filter((r) => r.some((c) => c !== "")), month };
+  if (sheetName) return { rows: toRows(sheetName).filter((r) => r.some((c) => c !== "")), month, fileSunday };
 
   // 2) tabella identificata da una cella "Inserimento Orari": prendi le righe sotto
   for (const name of wb.SheetNames) {
     const rows = toRows(name);
     const idx = rows.findIndex((r) => r.some((c) => norm(c) === TARGET_TABLE));
     if (idx !== -1) {
-      return { rows: rows.slice(idx + 1).filter((r) => r.some((c) => c !== "")), month };
+      return { rows: rows.slice(idx + 1).filter((r) => r.some((c) => c !== "")), month, fileSunday };
     }
   }
 
-  return { rows: [], month };
+  return { rows: [], month, fileSunday };
 }
 
 
@@ -251,6 +256,7 @@ function Index() {
   const [rows, setRows] = useState<string[][]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
   const [month, setMonth] = useState<Date | undefined>(undefined);
+  const [fileSunday, setFileSunday] = useState<Date | undefined>(undefined);
   const [selected, setSelected] = useState("");
   const [options, setOptions] = useState<string[]>([]);
   const sortedOptions = useMemo(
@@ -291,6 +297,11 @@ function Index() {
         const d = new Date(mon);
         if (!Number.isNaN(d.getTime())) setMonth(startOfMonth(d));
       }
+      const fs = localStorage.getItem(FILE_SUNDAY_KEY);
+      if (fs) {
+        const d = new Date(fs);
+        if (!Number.isNaN(d.getTime())) setFileSunday(d);
+      }
     } catch {
       /* ignore */
     }
@@ -309,10 +320,12 @@ function Index() {
       else localStorage.removeItem(SELECTED_KEY);
       if (month) localStorage.setItem(MONTH_KEY, month.toISOString());
       else localStorage.removeItem(MONTH_KEY);
+      if (fileSunday) localStorage.setItem(FILE_SUNDAY_KEY, fileSunday.toISOString());
+      else localStorage.removeItem(FILE_SUNDAY_KEY);
     } catch {
       /* quota superata: ignora */
     }
-  }, [hydrated, rows, fileName, selected, month]);
+  }, [hydrated, rows, fileName, selected, month, fileSunday]);
 
   const persist = (next: string[]) => {
     setOptions(next);
@@ -331,8 +344,24 @@ function Index() {
     const parsed = await parseExcel(file);
     setRows(parsed.rows);
     setMonth(parsed.month);
+    setFileSunday(parsed.fileSunday);
     setFileName(file.name);
   };
+
+  // Domenica di riferimento: l'ancora ESATTA letta da SETUP!E7 (anche se ricade nel mese
+  // precedente, es. 30/08 per un file di settembre). Se il file non la fornisce, si ricade
+  // sul calcolo basato sul mese (giorno prima del primo lunedì della griglia).
+  const referenceSunday = useMemo(() => {
+    if (fileSunday) return fileSunday;
+    if (!month) return undefined;
+    return addDays(startOfWeek(startOfMonth(month), { weekStartsOn: 1 }), -1);
+  }, [fileSunday, month]);
+
+  // Primo lunedì visualizzato: il giorno subito dopo la domenica di riferimento.
+  const gridStart = useMemo(
+    () => (referenceSunday ? addDays(referenceSunday, 1) : undefined),
+    [referenceSunday],
+  );
 
   const weeks: WeekData[] = useMemo(() => {
     if (!selected || rows.length === 0) return [];
@@ -352,10 +381,6 @@ function Index() {
     });
 
     // Displayed weeks run Monday -> Sunday and cover the selected month.
-    // The reference Sunday is the day BEFORE the first displayed Monday (gridStart):
-    // each Excel row covers a Sunday->Saturday week, where that row's Sunday precedes
-    // its own Monday-Saturday block (offset 0 = Sunday, 1..6 = Mon..Sat of the SAME row).
-    const gridStart = month ? startOfWeek(startOfMonth(month), { weekStartsOn: 1 }) : undefined;
     const weekCount =
       gridStart && month
         ? differenceInCalendarWeeks(endOfMonth(month), gridStart, { weekStartsOn: 1 }) + 1
@@ -370,16 +395,8 @@ function Index() {
       );
       return { monday, days };
     });
-  }, [rows, selected, month]);
+  }, [rows, selected, month, gridStart]);
 
-  // Domenica di riferimento: stesso ancoraggio usato per "weeks" (offset 0 = domenica
-  // che precede il primo lunedì visualizzato), ma calcolato una volta sola e riusabile
-  // per QUALSIASI nominativo, non solo quello selezionato nel menu.
-  const referenceSunday = useMemo(() => {
-    if (!month) return undefined;
-    const gridStart = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
-    return addDays(gridStart, -1);
-  }, [month]);
 
   // Mappa offset -> turno per ogni nominativo presente nell'elenco voci (non solo il selezionato).
   const peopleByOffset = useMemo(() => {
