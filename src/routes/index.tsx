@@ -187,6 +187,17 @@ async function parseExcel(
 }
 
 
+/** Restituisce nero o bianco per il massimo contrasto rispetto al colore esadecimale dato. */
+function contrastTextColor(hex: string): string {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16) / 255;
+  const g = parseInt(clean.slice(2, 4), 16) / 255;
+  const b = parseInt(clean.slice(4, 6), 16) / 255;
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const luminance = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return luminance > 0.5 ? "#000000" : "#FFFFFF";
+}
+
 function toMinutes(value: string): number | null {
   const m = value.match(/^(\d{1,2})[:.,]?(\d{2})?$/);
   if (!m) return null;
@@ -584,10 +595,10 @@ function Index() {
                             {data.total && (
                               <span
                                 className={cn(
-                                  "w-full rounded-md px-1 py-[2px] text-center text-[10px] font-medium leading-none text-foreground sm:rounded-xl sm:px-2 sm:py-[3px] sm:text-xs",
-                                  !data.late && "bg-secondary",
+                                  "w-full rounded-md px-1 py-[2px] text-center text-[10px] font-medium leading-none sm:rounded-xl sm:px-2 sm:py-[3px] sm:text-xs",
+                                  data.late ? undefined : "bg-secondary text-foreground",
                                 )}
-                                style={data.late ? { backgroundColor: accent } : undefined}
+                                style={data.late ? { backgroundColor: accent, color: contrastTextColor(accent) } : undefined}
                               >
                                 {data.total}
                               </span>
