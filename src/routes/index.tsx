@@ -579,7 +579,13 @@ function Index() {
                     >
                       {/* Data: posizione fissa, indipendente dall'altezza della tessera */}
                       <div className="absolute inset-x-0 top-2 z-10 pb-1 text-center">
-                        <div className="truncate text-[12px] sm:text-[16px]" style={{ color: "#5c5c5c" }}>
+                        <div
+                          className={cn(
+                            "block truncate rounded-full px-2 text-[12px] sm:text-[16px]",
+                            today && !data && "border-2 border-foreground",
+                          )}
+                          style={{ color: "#5c5c5c" }}
+                        >
                           {date ? format(date, "d", { locale: it }) : "—"}
                         </div>
                       </div>
