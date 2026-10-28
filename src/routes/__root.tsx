@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { registerServiceWorker } from "../lib/register-sw";
+import { UpdateNotice } from "../components/update-notice";
 
 
 function NotFoundComponent() {
@@ -137,6 +138,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {/* Avviso: questa versione sarà rimossa il 1 dicembre 2026; invita a passare a Turni 1.0 */}
+      <UpdateNotice />
     </QueryClientProvider>
   );
 }
