@@ -60,11 +60,11 @@ export function UpdateNotice() {
         }}
       >
         <h2 id="update-notice-title" style={{ margin: 0, fontSize: "19px", fontWeight: 700, lineHeight: 1.25 }}>
-          Questa versione di Calendario Turni non viene più aggiornata
+          Questa versione di Calendario Turni non viene più aggiornata e sarà rimossa a breve.
         </h2>
         <p id="update-notice-text" style={{ margin: "10px 0 0", fontSize: "14px", lineHeight: 1.4, color: "#475569" }}>
-          È disponibile la nuova versione, Turni 1.0, con le funzioni più recenti e una grafica rinnovata. Questa
-          versione sarà rimossa. Per continuare a usare l’app, passa alla nuova versione.
+          È disponibile Turni 1.0, con più funzioni e una grafica rinnovata. Per continuare a usare l’app, passa alla
+          nuova versione.
         </p>
         <p style={{ margin: "14px 0 0", fontSize: "12px", fontWeight: 600, color: "#475569" }}>
           Come passare alla nuova versione
